@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: core-app-8xcellence-20260925-1454-backend
+  namespace: core-app-8xcellence-20260925-1454
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: core-app-8xcellence-20260925-1454-backend
+  template:
+    metadata:
+      labels:
+        app: core-app-8xcellence-20260925-1454-backend
+    spec:
+      containers:
+        - name: backend
+          image: 179678238458.dkr.ecr.eu-west-3.amazonaws.com/cnp-app:core-app-8xcellence-20260925-1454-backend-latest
+          ports:
+            - containerPort: 8000

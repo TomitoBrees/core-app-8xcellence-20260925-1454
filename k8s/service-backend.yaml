@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: core-app-8xcellence-20260925-1454-backend
+  namespace: core-app-8xcellence-20260925-1454
+spec:
+  type: ClusterIP
+  selector:
+    app: core-app-8xcellence-20260925-1454-backend
+  ports:
+    - port: 80
+      targetPort: 8000

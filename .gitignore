@@ -1,0 +1,10 @@
+.env
+node_modules/
+dist/
+__pycache__/
+*.py[cod]
+.angular/
+.DS_Store
+target/
+.idea/
+.vscode/

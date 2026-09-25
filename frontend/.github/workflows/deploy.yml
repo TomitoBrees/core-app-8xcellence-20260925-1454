@@ -1,0 +1,54 @@
+name: Deploy to AWS
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: eu-west-3
+  ECR_REPOSITORY: 179678238458.dkr.ecr.eu-west-3.amazonaws.com/cnp-app
+  EKS_CLUSTER_NAME: cnp-eks-cluster
+  K8S_NAMESPACE: core-app-8xcellence-20260925-1454
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout du code
+        uses: actions/checkout@v4
+
+      - name: Authentification AWS via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::667958380418:role/cnp-core-app-8xcellence-20260925-1454-github-actions
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login à ECR
+        run: |
+          aws ecr get-login-password --region "${{ env.AWS_REGION }}" \
+            | docker login --username AWS --password-stdin "${{ env.ECR_REPOSITORY }}"
+
+      - name: Build de l image Docker
+        run: |
+          docker build -t "${{ env.ECR_REPOSITORY }}:${{ env.K8S_NAMESPACE }}-${{ github.sha }}" .
+
+      - name: Push vers ECR
+        run: |
+          docker push "${{ env.ECR_REPOSITORY }}:${{ env.K8S_NAMESPACE }}-${{ github.sha }}"
+
+      - name: Mise à jour du kubeconfig
+        run: aws eks update-kubeconfig --name "${{ env.EKS_CLUSTER_NAME }}" --region "${{ env.AWS_REGION }}"
+
+      - name: Déploiement sur Kubernetes
+        run: |
+          kubectl apply -f k8s/deployment.yaml
+          kubectl apply -f k8s/service.yaml
+          kubectl apply -f k8s/ingress.yaml
+          kubectl set image deployment/${{ env.K8S_NAMESPACE }} \
+            ${{ env.K8S_NAMESPACE }}="${{ env.ECR_REPOSITORY }}:${{ env.K8S_NAMESPACE }}-${{ github.sha }}" \
+            -n "${{ env.K8S_NAMESPACE }}"
